@@ -2,7 +2,6 @@ from azure.storage.blob import BlobClient, BlobServiceClient
 from openpyxl import load_workbook
 from PIL import Image
 import logging
-import shutil
 import time
 import glob
 import grpc
