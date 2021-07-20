@@ -1,9 +1,10 @@
-from azure.storage.blob import BlobClient, BlobServiceClient
+from function import resize_img
+from azure.storage.blob import BlobClient, BlobServiceClient, ContainerClient, __version__
 from openpyxl import load_workbook
-from PIL import Image
 import logging
 import time
 import glob
+import os, uuid
 import grpc
 import azure.functions as func
 
@@ -19,28 +20,24 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
     try:
         method = req.method
         url = req.url
-        files = req.files[_NAME]
+        img_files = req.files[_NAME]
 
         if method != 'POST':
             logging.warning(
-                f'ID:{event_id},the method was {files.content_type}.refused.')
+                f'ID:{event_id},the method was {img_files.content_type}.refused.')
             return func.HttpResponse(f'only accept POST method', status_code=400)
 
-        if files:
-            if files.content_type != 'image/png':
+        if img_files:
+            if img_files.content_type != 'image/png':
                 return func.HttpResponse(f'only accept png images.', status_code=400)
 
             # --- 画像の前処理 ---
             
             # 画像の読み込み
-
-            # 画像サイズの変更(500x500)
-            
-            # 画像の保存
-
+            img = img_files.read()
+            # 画像サイズの変更(300x300), 画像を保存
+            img_re = resize_img(img)
             # ---
-
-
             # --- 画像をモデルに送る ---
 
 
@@ -49,7 +46,7 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
 
 
             # --- Blobの処理 ---
-
+            logging.info("Azure Blob Storage v" + __version__)
             # 各Blobからスプレッドシートとタグリストを取得する(sheet=出欠簿, tag=タグリスト)
             
             # スプレッドシートの情報とタグを参照する(一致=status変更, 不一致=変更なし)
